@@ -109,7 +109,7 @@ The bot supports these property types:
 
 ## 🎯 Demo
 
-Try the bot here: [@FindHomeDXB_bot](https://t.me/FindHomeDXB_bot)
+Try the bot here: [@FindHomeDXB_bot](https://t.me/Find_Home_DXB_Bot)
 
 ### 📱 Web Interface Screenshots
 
