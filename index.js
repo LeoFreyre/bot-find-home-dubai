@@ -3,7 +3,7 @@ const { Telegraf, Markup } = require('telegraf');
 const { createClient } = require('@supabase/supabase-js');
 const express = require('express');
 const bodyParser = require('body-parser');
-
+// Ready to deploy
 // Constants
 const MAX_PHOTOS = 10;
 const WEBSITE_URL = 'https://findhomedxb.online/';
