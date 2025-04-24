@@ -3,11 +3,11 @@ const { Telegraf, Markup } = require('telegraf');
 const { createClient } = require('@supabase/supabase-js');
 const express = require('express');
 const bodyParser = require('body-parser');
-// Ready to deploy
+// Re-deploy
 // Constants
 const MAX_PHOTOS = 10;
-const WEBSITE_URL = 'https://findhomedxb.online/';
-const AGENT_CONTACT = 'wa.me/+97155555555'; // Example number phone
+const WEBSITE_URL = 'https://bot-find-home-dubai.web.app/';
+const AGENT_CONTACT = 'wa.me/+971557295662';
 const PROPERTIES_PER_PAGE = 5;
 
 const PROPERTY_TYPES = [
@@ -37,6 +37,9 @@ app.use(bodyParser.json());
 const userSessions = new Map();
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
+// Track blocked chats to avoid sending messages to them
+const blockedChats = new Set();
+
 function cleanupSessions() {
   const now = Date.now();
   for (const [userId, session] of userSessions.entries()) {
@@ -47,6 +50,56 @@ function cleanupSessions() {
 }
 
 setInterval(cleanupSessions, 15 * 60 * 1000); // Run cleanup every 15 minutes
+
+// Function to check if user has a valid session
+function hasValidSession(userId) {
+  const session = userSessions.get(userId);
+  return session && Date.now() - session.lastActive <= SESSION_TIMEOUT;
+}
+
+// Safe message sending function
+async function safeSendMessage(chatId, text, extra = {}) {
+  if (blockedChats.has(chatId)) {
+    console.log(`Skipping message to blocked chat ${chatId}`);
+    return null;
+  }
+  
+  try {
+    return await bot.telegram.sendMessage(chatId, text, extra);
+  } catch (error) {
+    if (error.description && 
+        (error.description.includes('blocked') || 
+         error.description.includes('kicked') || 
+         error.description.includes('Forbidden'))) {
+      blockedChats.add(chatId);
+      console.log(`Adding chat ${chatId} to blocked list`);
+    }
+    console.error(`Error sending message to ${chatId}:`, error.description || error);
+    return null;
+  }
+}
+
+// Safe media sending function
+async function safeSendMediaGroup(chatId, mediaGroup) {
+  if (blockedChats.has(chatId)) {
+    console.log(`Skipping media to blocked chat ${chatId}`);
+    return null;
+  }
+  
+  try {
+    return await bot.telegram.sendMediaGroup(chatId, mediaGroup);
+  } catch (error) {
+    if (error.description && 
+        (error.description.includes('blocked') || 
+         error.description.includes('kicked') || 
+         error.description.includes('Forbidden'))) {
+      blockedChats.add(chatId);
+      console.log(`Adding chat ${chatId} to blocked list`);
+    }
+    console.error(`Error sending media to ${chatId}:`, error.description || error);
+    return null;
+  }
+}
 
 // Keyboard layouts
 const mainKeyboard = Markup.keyboard([
@@ -86,98 +139,141 @@ const anyLocationKeyboard = Markup.keyboard([
 
 // Command handlers
 bot.command('start', async (ctx) => {
-  await ctx.reply("Welcome to Dubai Property Bot! 🌆\nFind your perfect home or list your property with us.", mainKeyboard);
+  try {
+    await safeSendMessage(ctx.chat.id, "Welcome to Dubai Property Bot! 🌆\nFind your perfect home or list your property with us.", mainKeyboard);
+  } catch (error) {
+    console.error('Error in start command:', error);
+  }
 });
 
-bot.hears('🌐 Website', (ctx) => ctx.reply(`Visit our website: ${WEBSITE_URL}`));
-bot.hears('📞 Contact Agent', (ctx) => ctx.reply(`Contact our agent via WhatsApp: ${AGENT_CONTACT}`));
-bot.hears('↩️ Back to Main Menu', (ctx) => ctx.reply('Main Menu:', mainKeyboard));
+bot.hears('🌐 Website', async (ctx) => {
+  try {
+    await safeSendMessage(ctx.chat.id, `Visit our website: ${WEBSITE_URL}`);
+  } catch (error) {
+    console.error('Error in website command:', error);
+  }
+});
+
+bot.hears('📞 Contact Agent', async (ctx) => {
+  try {
+    await safeSendMessage(ctx.chat.id, `Contact our agent via WhatsApp: ${AGENT_CONTACT}`);
+  } catch (error) {
+    console.error('Error in contact agent command:', error);
+  }
+});
+
+bot.hears('↩️ Back to Main Menu', async (ctx) => {
+  try {
+    await safeSendMessage(ctx.chat.id, 'Main Menu:', mainKeyboard);
+  } catch (error) {
+    console.error('Error in back to menu command:', error);
+  }
+});
 
 // Property upload flow
 bot.hears('📤 Upload Property', async (ctx) => {
-  userSessions.set(ctx.from.id, {
-    step: 'description',
-    photos: [],
-    lastActive: Date.now()
-  });
-  await ctx.reply('Please provide a detailed description of the property:');
+  try {
+    userSessions.set(ctx.from.id, {
+      step: 'description',
+      photos: [],
+      lastActive: Date.now()
+    });
+    await safeSendMessage(ctx.chat.id, 'Please provide a detailed description of the property:');
+  } catch (error) {
+    console.error('Error in upload property command:', error);
+  }
 });
 
 // Property search flow
 bot.hears('🏡 Search Property', async (ctx) => {
-  userSessions.set(ctx.from.id, {
-    step: 'search_type',
-    filters: {},
-    propertyIndex: 0,
-    lastActive: Date.now()
-  });
-  await ctx.reply('Select property type:', anyTypeKeyboard);
+  try {
+    userSessions.set(ctx.from.id, {
+      step: 'search_type',
+      filters: {},
+      propertyIndex: 0,
+      lastActive: Date.now()
+    });
+    await safeSendMessage(ctx.chat.id, 'Select property type:', anyTypeKeyboard);
+  } catch (error) {
+    console.error('Error in search property command:', error);
+  }
 });
 
 // Handler para 'done' en la subida de fotos
 bot.hears('done', async (ctx) => {
-  const session = userSessions.get(ctx.from.id);
-  if (!session || session.step !== 'photos') return;
+  try {
+    const session = userSessions.get(ctx.from.id);
+    if (!session || session.step !== 'photos') return;
 
-  if (session.photos.length === 0) {
-    await ctx.reply('Please send at least one photo of the property.');
-    return;
+    if (session.photos.length === 0) {
+      await safeSendMessage(ctx.chat.id, 'Please send at least one photo of the property.');
+      return;
+    }
+
+    await saveProperty(ctx);
+  } catch (error) {
+    console.error('Error in done command:', error);
   }
-
-  await saveProperty(ctx);
 });
 
 // Message handler para textos
 bot.on('text', async (ctx) => {
-  const session = userSessions.get(ctx.from.id);
-  if (!session) return;
-
-  session.lastActive = Date.now();
-
   try {
-    switch (session.step) {
+    const session = userSessions.get(ctx.from.id);
+    
+    // Verify if this is a valid session or a main menu command
+    const mainMenuCommands = ['🏡 Search Property', '📤 Upload Property', '🌐 Website', '📞 Contact Agent', '↩️ Back to Main Menu'];
+    if (!session && !mainMenuCommands.includes(ctx.message.text)) {
+      return;
+    }
+
+    if (session) {
+      session.lastActive = Date.now();
+    }
+
+    switch (session?.step) {
       case 'description':
         session.description = ctx.message.text;
         session.step = 'price';
-        await ctx.reply('Enter the monthly price (AED):\nExample: 5000');
+        await safeSendMessage(ctx.chat.id, 'Enter the monthly price (AED):\nExample: 5000');
         break;
 
       case 'price':
         const price = parseFloat(ctx.message.text);
         if (isNaN(price) || price <= 0) {
-          await ctx.reply('Please enter a valid price in AED.');
+          await safeSendMessage(ctx.chat.id, 'Please enter a valid price in AED.');
           return;
         }
         session.price = price;
         session.step = 'type';
-        await ctx.reply('Select the property type:', propertyTypeKeyboard);
+        await safeSendMessage(ctx.chat.id, 'Select the property type:', propertyTypeKeyboard);
         break;
 
       case 'type':
         if (!PROPERTY_TYPES.includes(ctx.message.text)) {
-          await ctx.reply('Please select a valid property type from the keyboard.');
+          await safeSendMessage(ctx.chat.id, 'Please select a valid property type from the keyboard.');
           return;
         }
         session.type = ctx.message.text;
         session.step = 'location';
-        await ctx.reply('Enter the location of the property:');
+        await safeSendMessage(ctx.chat.id, 'Enter the location of the property:');
         break;
 
       case 'location':
         session.location = ctx.message.text;
         session.step = 'contact';
-        await ctx.reply('Enter your contact phone number:\nExample: +971 XX XXX XXXX');
+        await safeSendMessage(ctx.chat.id, 'Enter your contact phone number:\nExample: +971 XX XXX XXXX');
         break;
 
       case 'contact':
         const phoneRegex = /^\+?[\d\s-]{10,}$/;
         if (!phoneRegex.test(ctx.message.text)) {
-          await ctx.reply('Please enter a valid phone number.');
+          await safeSendMessage(ctx.chat.id, 'Please enter a valid phone number.');
           return;
         }
         session.contact_info = ctx.message.text;
         session.step = 'photos';
-        await ctx.reply(`Please send up to ${MAX_PHOTOS} photos of the property.\nType 'done' when finished.`);
+        await safeSendMessage(ctx.chat.id, `Please send up to ${MAX_PHOTOS} photos of the property.\nType 'done' when finished.`);
         break;
 
       case 'search_type':
@@ -186,11 +282,11 @@ bot.on('text', async (ctx) => {
         } else if (PROPERTY_TYPES.includes(ctx.message.text)) {
           session.filters.type = ctx.message.text;
         } else {
-          await ctx.reply('Please select a valid property type:', anyTypeKeyboard);
+          await safeSendMessage(ctx.chat.id, 'Please select a valid property type:', anyTypeKeyboard);
           return;
         }
         session.step = 'search_price_min';
-        await ctx.reply('Enter minimum price in AED:', skipPriceKeyboard);
+        await safeSendMessage(ctx.chat.id, 'Enter minimum price in AED:', skipPriceKeyboard);
         break;
 
       case 'search_price_min':
@@ -199,13 +295,13 @@ bot.on('text', async (ctx) => {
         } else {
           const minPrice = parseFloat(ctx.message.text);
           if (isNaN(minPrice) || minPrice < 0) {
-            await ctx.reply('Please enter a valid price or click Skip:', skipPriceKeyboard);
+            await safeSendMessage(ctx.chat.id, 'Please enter a valid price or click Skip:', skipPriceKeyboard);
             return;
           }
           session.filters.min_price = minPrice;
         }
         session.step = 'search_price_max';
-        await ctx.reply('Enter maximum price in AED:', skipPriceKeyboard);
+        await safeSendMessage(ctx.chat.id, 'Enter maximum price in AED:', skipPriceKeyboard);
         break;
 
       case 'search_price_max':
@@ -214,17 +310,17 @@ bot.on('text', async (ctx) => {
         } else {
           const maxPrice = parseFloat(ctx.message.text);
           if (isNaN(maxPrice) || maxPrice < 0) {
-            await ctx.reply('Please enter a valid price or click Skip:', skipPriceKeyboard);
+            await safeSendMessage(ctx.chat.id, 'Please enter a valid price or click Skip:', skipPriceKeyboard);
             return;
           }
           if (session.filters.min_price && maxPrice < session.filters.min_price) {
-            await ctx.reply('Maximum price must be greater than minimum price');
+            await safeSendMessage(ctx.chat.id, 'Maximum price must be greater than minimum price');
             return;
           }
           session.filters.max_price = maxPrice;
         }
         session.step = 'search_location';
-        await ctx.reply('Enter the location you\'re interested in:', anyLocationKeyboard);
+        await safeSendMessage(ctx.chat.id, 'Enter the location you\'re interested in:', anyLocationKeyboard);
         break;
 
       case 'search_location':
@@ -238,39 +334,37 @@ bot.on('text', async (ctx) => {
         break;
     }
   } catch (error) {
-    console.error('Error in message handler:', error);
-    await ctx.reply('An error occurred. Please try again or contact support.');
+    console.error('Error in text handler:', error);
   }
 });
 
 // Photo handler
 bot.on('photo', async (ctx) => {
-  const session = userSessions.get(ctx.from.id);
-  if (!session || session.step !== 'photos') return;
-
-  session.lastActive = Date.now();
-
   try {
+    const session = userSessions.get(ctx.from.id);
+    if (!session || session.step !== 'photos') return;
+
+    session.lastActive = Date.now();
+
     const photoId = ctx.message.photo[ctx.message.photo.length - 1].file_id;
     session.photos.push(photoId);
 
     if (session.photos.length >= MAX_PHOTOS) {
       await saveProperty(ctx);
     } else {
-      await ctx.reply(`Photo ${session.photos.length}/${MAX_PHOTOS} received. Send more or type 'done'.`);
+      await safeSendMessage(ctx.chat.id, `Photo ${session.photos.length}/${MAX_PHOTOS} received. Send more or type 'done'.`);
     }
   } catch (error) {
     console.error('Error handling photo:', error);
-    await ctx.reply('Error saving photo. Please try again.');
   }
 });
 
 // Save property function
 async function saveProperty(ctx) {
-  const session = userSessions.get(ctx.from.id);
-  if (!session) return;
-
   try {
+    const session = userSessions.get(ctx.from.id);
+    if (!session) return;
+
     const propertyData = {
       description: session.description,
       price: session.price,
@@ -286,20 +380,20 @@ async function saveProperty(ctx) {
     const { error } = await supabase.from('properties').insert([propertyData]);
     if (error) throw error;
 
-    await ctx.reply('Property listed successfully! ✅\nReturn to main menu:', mainKeyboard);
+    await safeSendMessage(ctx.chat.id, 'Property listed successfully! ✅\nReturn to main menu:', mainKeyboard);
     userSessions.delete(ctx.from.id);
   } catch (error) {
     console.error('Error saving property:', error);
-    await ctx.reply('Error saving property. Please try again.');
+    await safeSendMessage(ctx.chat.id, 'Error saving property. Please try again.');
   }
 }
 
 // Search properties function
 async function searchProperties(ctx) {
-  const session = userSessions.get(ctx.from.id);
-  if (!session) return;
-
   try {
+    const session = userSessions.get(ctx.from.id);
+    if (!session) return;
+
     let query = supabase
       .from('properties')
       .select('*')
@@ -325,7 +419,7 @@ async function searchProperties(ctx) {
     if (error) throw error;
 
     if (!properties.length) {
-      await ctx.reply('No properties found matching your criteria. Try adjusting your filters:', 
+      await safeSendMessage(ctx.chat.id, 'No properties found matching your criteria. Try adjusting your filters:', 
         Markup.inlineKeyboard([
           Markup.button.callback('🔄 New Search', 'new_search')
         ])
@@ -340,7 +434,7 @@ async function searchProperties(ctx) {
       if (session.filters.location) filterSummary += `\nLocation: ${session.filters.location}`;
       if (session.filters.min_price) filterSummary += `\nMin Price: AED ${session.filters.min_price.toLocaleString()}`;
       if (session.filters.max_price) filterSummary += `\nMax Price: AED ${session.filters.max_price.toLocaleString()}`;
-      await ctx.reply(filterSummary);
+      await safeSendMessage(ctx.chat.id, filterSummary);
     }
 
     // Get current property
@@ -361,7 +455,7 @@ Property ${session.propertyIndex + 1} of ${properties.length}
       caption: index === 0 ? caption : undefined,
     }));
 
-    await ctx.telegram.sendMediaGroup(ctx.chat.id, mediaGroup);
+    await safeSendMediaGroup(ctx.chat.id, mediaGroup);
 
     // Create buttons based on current position
     const buttons = [];
@@ -370,16 +464,15 @@ Property ${session.propertyIndex + 1} of ${properties.length}
     buttons.push(Markup.button.callback('🔄 New Search', 'new_search'));
     
     if (session.propertyIndex < properties.length - 1) {
-    buttons.push(Markup.button.callback('👇 Next', 'next_property'));
+      buttons.push(Markup.button.callback('👇 Next', 'next_property'));
     }
 
-    await ctx.reply('Options:', 
+    await safeSendMessage(ctx.chat.id, 'Options:', 
       Markup.inlineKeyboard(buttons)
     );
-
   } catch (error) {
     console.error('Error searching properties:', error);
-    await ctx.reply('Error searching properties. Please try again.');
+    await safeSendMessage(ctx.chat.id, 'Error searching properties. Please try again.');
   }
 }
 
@@ -394,48 +487,73 @@ bot.action(/^contact_(\d+)$/, async (ctx) => {
       .single();
 
     if (property) {
-      await ctx.reply(`📞 Contact number: ${property.contact_info}`);
+      await safeSendMessage(ctx.chat.id, `📞 Contact number: ${property.contact_info}`);
     }
-    await ctx.answerCbQuery();
+    await ctx.answerCbQuery().catch(e => console.error('Error in answerCbQuery:', e));
   } catch (error) {
     console.error('Error showing contact:', error);
-    await ctx.reply('Error loading contact information. Please try again.');
+    try {
+      await safeSendMessage(ctx.chat.id, 'Error loading contact information. Please try again.');
+      await ctx.answerCbQuery().catch(e => console.error('Error in answerCbQuery:', e));
+    } catch (replyError) {
+      console.error('Error in contact action reply:', replyError);
+    }
   }
 });
 
 bot.action('next_property', async (ctx) => {
-  const session = userSessions.get(ctx.from.id);
-  if (session) {
-    session.propertyIndex++;
-    const { data: properties } = await supabase
-      .from('properties')
-      .select('*')
-      .order('created_at', { ascending: false });
+  try {
+    const session = userSessions.get(ctx.from.id);
+    if (session) {
+      session.propertyIndex++;
+      const { data: properties } = await supabase
+        .from('properties')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (session.propertyIndex >= properties.length) {
-      await ctx.reply('There are no more results to show according to your search criteria.');
-    } else {
-      await searchProperties(ctx);
+      if (session.propertyIndex >= properties.length) {
+        await safeSendMessage(ctx.chat.id, 'There are no more results to show according to your search criteria.');
+      } else {
+        await searchProperties(ctx);
+      }
     }
+    await ctx.answerCbQuery().catch(e => console.error('Error in answerCbQuery:', e));
+  } catch (error) {
+    console.error('Error in next_property action:', error);
   }
-  await ctx.answerCbQuery();
 });
 
 bot.action('new_search', async (ctx) => {
-  userSessions.set(ctx.from.id, {
-    step: 'search_type',
-    filters: {},
-    propertyIndex: 0,
-    lastActive: Date.now()
-  });
-  await ctx.reply('Select property type:', anyTypeKeyboard);
-  await ctx.answerCbQuery();
+  try {
+    userSessions.set(ctx.from.id, {
+      step: 'search_type',
+      filters: {},
+      propertyIndex: 0,
+      lastActive: Date.now()
+    });
+    await safeSendMessage(ctx.chat.id, 'Select property type:', anyTypeKeyboard);
+    await ctx.answerCbQuery().catch(e => console.error('Error in answerCbQuery:', e));
+  } catch (error) {
+    console.error('Error in new_search action:', error);
+  }
 });
 
-// Error handling
+// Improved error handling
 bot.catch((err, ctx) => {
   console.error('Bot error:', err);
-  ctx.reply('An error occurred. Please try again later.');
+  
+  // Only try to reply if the error is not related to permissions
+  if (ctx && ctx.chat && (!err.description || 
+      (!err.description.includes('blocked') && 
+       !err.description.includes('kicked') && 
+       !err.description.includes('Forbidden')))) {
+    try {
+      safeSendMessage(ctx.chat.id, 'An error occurred. Please try again later.')
+        .catch(e => console.error('Could not send error message:', e));
+    } catch (replyError) {
+      console.error('Error while sending error reply:', replyError);
+    }
+  }
 });
 
 // Health check endpoint

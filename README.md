@@ -111,16 +111,6 @@ The bot supports these property types:
 
 Try the bot here: [@FindHomeDXB_bot](https://t.me/Find_Home_DXB_Bot)
 
-### 📱 Web Interface Screenshots
-
-<p align="center">
-  <img src="/screenshot1.png" alt="FindHomeDXB Property Listing" width="400"/>
-  <br><br>
-  <img src="/screenshot2.png" alt="FindHomeDXB Search Interface" width="400"/>
-  <br><br>
-  <img src="/screenshot3.png" alt="FindHomeDXB Search Interface" width="400"/>
-</p>
-
 ## 📄 License
 
 This project is licensed under the MIT License.
