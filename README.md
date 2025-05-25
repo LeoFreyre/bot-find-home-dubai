@@ -1,116 +1,156 @@
- <h1 align="center">Telegram Rental Bot 🏠</h1>
-
+<h1 align="center">Business Logic App - Real Estate 📱</h1>
 <div align="center">
-  Designed to streamline property rentals in Dubai, offering an intuitive interface for both property seekers and listers.
-
+  Ideal for medium and growing Holiday Homes Startups to organize all business logic and easily keep track of everything.
   <br>
   <br>
-
-  [![Telegram Bot](https://img.shields.io/badge/Telegram-Bot-blue?style=flat-square&logo=telegram)](https://core.telegram.org/bots/api)
-  [![Node.js](https://img.shields.io/badge/Node.js-green?style=flat-square&logo=node.js)](https://nodejs.org/)
-  [![Supabase](https://img.shields.io/badge/Supabase-Database-lightgreen?style=flat-square&logo=supabase)](https://supabase.com/)
-  [![Railway](https://img.shields.io/badge/Railway-Deployment-blueviolet?style=flat-square&logo=railway)](https://railway.app/)
-  [![GitHub](https://img.shields.io/badge/GitHub-Repository-gray?style=flat-square&logo=github)](https://github.com/LeoFreyre/bot-find-home-dubai)
+<p align="center">
+  <a href="https://flutter.dev/">
+    <img src="https://img.shields.io/badge/Flutter-blue?style=flat-square&logo=flutter" alt="Flutter" />
+  </a>
+  <a href="https://firebase.google.com/">
+    <img src="https://img.shields.io/badge/Firebase-orange?style=flat-square&logo=firebase" alt="Firebase" />
+  </a>
+  <a href="https://cloudinary.com/">
+    <img src="https://img.shields.io/badge/Cloudinary-blue?style=flat-square&logo=cloudinary" alt="Cloudinary" />
+  </a>
+  <a href="https://cloud.google.com/">
+    <img src="https://img.shields.io/badge/Google%20Cloud-red?style=flat-square&logo=google-cloud" alt="Google Cloud" />
+  </a>
+  <a href="https://vercel.com/">
+    <img src="https://img.shields.io/badge/Vercel-black?style=flat-square&logo=vercel" alt="Vercel" />
+  </a>
+  <a href="https://github.com/LeoFreyre/adminrentalho-app-real-estate-control">
+    <img src="https://img.shields.io/badge/GitHub-Repository-gray?style=flat-square&logo=github" alt="GitHub" />
+  </a>
+</p>
 </div>
 
 ## 🌟 Features
+- **Owner Module**
+  - Smart task assignment with automatic Smoobu API integration
+  - Complete maintenance ticket management with multimedia support
+  - Document management with check-in workflow and booking synchronization
+  - Real-time updates via Firestore with visual notifications
 
-- **Advanced Property Search**
-  - Filter by property type (Studio, 1BHK, Villa, etc.)
-  - Set minimum and maximum price ranges
-  - Search by location
-  - Skip any filter for broader results
+- **Employee Module**
+  - Interactive cleaning tasks with real-time status updates
+  - Assigned maintenance tickets with progress tracking
+  - Document verification interface with quick marking system
+  - Integrated multimedia capture and cloud storage
 
-- **Property Listing Management**
-  - Upload up to 10 photos per property
-  - Detailed property descriptions
-  - Contact information verification
-  - Price and location validation
-
-- **User-Friendly Interface**
-  - Custom keyboards for easy navigation
-  - Interactive buttons for property browsing
-  - Step-by-step listing process
-  - Clear property display with pagination
+- **Advanced Technical Features**
+  - Firebase Auth with role-based access control
+  - Cross-platform support (iOS/Android)
+  - Cloudinary integration for optimized media management
+  - Dynamic UI with smooth and responsive design
 
 ## 📦 Installation
-
 1. Clone the repository:
 ```bash
-git clone https://github.com/LeoFreyre/bot-find-home-dubai.git
-cd bot-find-home-dubai
+git clone https://github.com/LeoFreyre/adminrentalho-app-real-estate-control.git
+cd adminrentalho-app-real-estate-control
 ```
 
-2. Install dependencies:
+2. Install Flutter dependencies:
 ```bash
-npm install
+flutter pub get
 ```
 
-3. Create a `.env` file with the following variables:
-```env
-TELEGRAM_BOT_TOKEN=your_bot_token
-SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_key
-PORT=3000
+3. Install iOS dependencies (macOS only):
+```bash
+cd ios
+pod install
+cd ..
 ```
+##
+4. Configure Firebase:
+   - Create a new Firebase project
+   - Add your Android and iOS apps to the project
+   - Download and place the configuration files:
+     - `google-services.json` in `android/app/`
+     - `GoogleService-Info.plist` in `ios/Runner/`
+   - Enable Authentication, Firestore, and Storage in Firebase Console
 
-4. Set up Supabase:
-   - Create a new project in Supabase
-   - Create a 'properties' table with the following schema:
-     ```sql
-     CREATE TABLE properties (
-       id SERIAL PRIMARY KEY,
-       description TEXT NOT NULL,
-       price NUMERIC NOT NULL,
-       type TEXT NOT NULL,
-       location TEXT NOT NULL,
-       contact_info TEXT NOT NULL,
-       photos TEXT[] NOT NULL,
-       created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
-       user_id BIGINT NOT NULL,
-       verified_by_admin TEXT DEFAULT '-'
-     );
-     ```
+5. Set up Android and iOS emulators:
+   - **Android**: Install Android Studio and create an AVD
+   - **iOS** (macOS only): Install Xcode and iOS Simulator
 
 ## 🚀 Usage
-
-1. Start the bot:
+1. Run the application:
 ```bash
-npm start
+flutter run
 ```
 
-2. Add your bot on Telegram by searching for your bot's username
+2. Configure Firebase and connect it to your project
 
-3. Start interacting with the bot using these commands:
-   - `/start` - Initialize the bot
-   - `🏡 Search Property` - Start property search
-   - `📤 Upload Property` - List a new property
-   - `🌐 Website` - Visit the website
-   - `📞 Contact Agent` - Contact support
+3. Set up Android and iOS emulators (if working with macOS)
+
+4. The app provides different interfaces based on user roles:
+   - **Owners**: Full property management and employee oversight
+   - **Employees**: Access to assigned tasks and document verification
+
+##
+
+> [!IMPORTANT]
+> Create a `.env` file with the following variables:
+```env
+# Smoobu
+API_KEY=your_smoobu_api_key_here
+SMOOBU_BASE_URL=https://login.smoobu.com/api/reservations
+
+# Cloudinary
+CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
+CLOUDINARY_API_KEY=your_cloudinary_api_key
+CLOUDINARY_API_SECRET=your_cloudinary_api_secret
+CLOUDINARY_UPLOAD_PRESET=your_upload_preset
+
+```
 
 ## 💻 Technology Stack
+- **Flutter** - Cross-platform mobile development
+- **Firebase** - Backend services and real-time database
+- **Cloudinary** - Media management and optimization
+- **Vercel** - Web deployment platform
 
-- **Node.js** - Backend runtime environment
-- **Supabase** - Database and storage
-- **Railway** - Deployment platform
-- **Telegram Bot API** - Bot interface
+### External Tools
+- **Homebrew** - Package manager for macOS
+- **Node.js** - JavaScript runtime for additional tooling
 
-## 📋 Property Types
-The bot supports these property types:
-- Studio
-- Maid's Room
-- Sharing
-- 1BHK to 4BHK+
-- Penthouse
-- Duplex
-- Loft
-- Villa
-- Warehouse
+##
 
-## 🎯 Demo
+>[!NOTE]
+> This project is based on the API architecture of the smoobu.com channel manager. You can find the documentation of the API here 👇
+> https://docs.smoobu.com/#introduction
 
-Try the bot here: [@FindHomeDXB_bot](https://t.me/Find_Home_DXB_Bot)
+## 📸 Screenshots
+
+<div align="center">
+
+<table>
+  <tr>
+    <td><img src="https://github.com/LeoFreyre/adminrentalho-app-real-estate-control/blob/main/Screenshots/09D8593C-C819-473B-B7D9-4CEAAE63F655_4_5005_c.jpeg?raw=true" width="250"/></td>
+    <td><img src="https://github.com/LeoFreyre/adminrentalho-app-real-estate-control/blob/main/Screenshots/0F80B5B2-7CE8-4F88-B393-669B313B9B62_4_5005_c.jpeg?raw=true" width="250"/></td>
+    <td><img src="https://github.com/LeoFreyre/adminrentalho-app-real-estate-control/blob/main/Screenshots/115BC7AA-72E3-407D-8A98-2B6F17B45A93_4_5005_c.jpeg?raw=true" width="250"/></td>
+  </tr>
+  <tr>
+    <td><img src="https://github.com/LeoFreyre/adminrentalho-app-real-estate-control/blob/main/Screenshots/183D5DA1-3A4E-4DE8-AF00-0C015D0EE7FC_4_5005_c.jpeg?raw=true" width="250"/></td>
+    <td><img src="https://github.com/LeoFreyre/adminrentalho-app-real-estate-control/blob/main/Screenshots/3A237C94-A2B5-4EBE-9504-532583DC7993_4_5005_c.jpeg?raw=true" width="250"/></td>
+    <td><img src="https://github.com/LeoFreyre/adminrentalho-app-real-estate-control/blob/main/Screenshots/A4ADA533-4DC4-4BF9-9B9C-308E43E15C3F_4_5005_c.jpeg?raw=true" width="250"/></td>
+  </tr>
+  <tr>
+    <td><img src="https://github.com/LeoFreyre/adminrentalho-app-real-estate-control/blob/main/Screenshots/D51AC1DF-FDB8-43C5-920F-6FB3D1667224_4_5005_c.jpeg?raw=true" width="250"/></td>
+    <td><img src="https://github.com/LeoFreyre/adminrentalho-app-real-estate-control/blob/main/Screenshots/D9F9EA7B-6EED-4CFE-9AA1-33F1B0CC2D59_4_5005_c.jpeg?raw=true" width="250"/></td>
+    <td><img src="https://github.com/LeoFreyre/adminrentalho-app-real-estate-control/blob/main/Screenshots/DA22B31B-D8CA-4CC3-B952-F8640DE52514_4_5005_c.jpeg?raw=true" width="250"/></td>
+  </tr>
+</table>
+
+</div>
+
+*[Support for iOS 15+/Android 10+ – Timezone: Asia/Dubai configured by default]*
+
+
+## 🌐 Live
+Visit the web of the project: https://suite-adminrentalho.web.app
 
 ## 📄 License
-
 This project is licensed under the MIT License.
